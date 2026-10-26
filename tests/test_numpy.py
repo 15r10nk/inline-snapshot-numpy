@@ -1,3 +1,6 @@
+import os
+import platform
+
 import numpy
 import pytest
 from inline_snapshot import snapshot
@@ -13,6 +16,11 @@ from inline_snapshot_numpy import (
     assert_array_max_ulp,
 )
 from inline_snapshot_numpy import snapshot as numpy_snapshot
+
+requires_snapshot_updates = pytest.mark.skipif(
+    platform.python_implementation() == "PyPy" and "PYTEST_XDIST_WORKER" in os.environ,
+    reason="inline-snapshot disables snapshot updates with xdist on PyPy",
+)
 
 
 def test_assert_array_equal():
@@ -57,6 +65,7 @@ def test_failure_preserves_non_assertion_error():
         state().active = active
 
 
+@requires_snapshot_updates
 def test_create_and_fix_snapshot():
     example = Example(
         """\
@@ -87,6 +96,7 @@ def test_array():
     )
 
 
+@requires_snapshot_updates
 def test_create_implicit_snapshot_argument():
     Example(
         """\
@@ -114,6 +124,7 @@ def test_array():
     ).run_inline()
 
 
+@requires_snapshot_updates
 def test_dtype_is_preserved():
     example = Example(
         """\
