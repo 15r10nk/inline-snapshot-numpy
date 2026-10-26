@@ -7,7 +7,7 @@ import pytest
 from inline_snapshot import snapshot
 from inline_snapshot._global_state import state
 from inline_snapshot.testing import Example
-from rich.syntax import Syntax
+from rich.text import Text
 
 from inline_snapshot_numpy import (
     assert_allclose,
@@ -90,11 +90,47 @@ values:
  [3., 4.]]"""
     )
 
-    format.encode(expected + 1, changed_path)
+    changed = expected.copy()
+    changed[1, 0] = 30
+    format.encode(changed, changed_path)
     array_diff = format.rich_diff(path, changed_path)
-    assert isinstance(array_diff, Syntax)
-    assert "-[[1., 2.]," in array_diff.code
-    assert "+[[2., 3.]," in array_diff.code
+    assert isinstance(array_diff, Text)
+    assert array_diff.plain == "~ (1, 0): 3. -> 30."
+    assert {span.style for span in array_diff.spans} >= {"red", "green"}
+
+    format.encode(numpy.array([1, 3]), path)
+    format.encode(numpy.array([0, 1, 2, 3]), changed_path)
+    assert (
+        format.rich_diff(path, changed_path).plain
+        == """\
+- shape: (2,)
++ shape: (4,)
++ (0,): 0
++ (2,): 2"""
+    )
+    assert (
+        format.rich_diff(changed_path, path).plain
+        == """\
+- shape: (4,)
++ shape: (2,)
+- (0,): 0
+- (2,): 2"""
+    )
+
+    format.encode(numpy.array([1], dtype="int32"), path)
+    format.encode(numpy.array([1], dtype="int64"), changed_path)
+    assert format.rich_diff(path, changed_path).plain == "- dtype: <i4\n+ dtype: <i8"
+
+    large = numpy.arange(2000)
+    changed_large = large.copy()
+    changed_large[1000] = -1
+    format.encode(large, path)
+    format.encode(changed_large, changed_path)
+    assert (
+        format.rich_diff(path, changed_path).plain
+        == """\
+~ (1000,): 1000 -> -1"""
+    )
 
     with pytest.raises(ValueError, match="Object arrays cannot be saved"):
         format.encode(numpy.array([object()], dtype=object), path)
