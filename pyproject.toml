@@ -45,7 +45,7 @@ requires-python = ">=3.9"
 version = "0.1.0"
 
 [project.entry-points.inline_snapshot]
-numpy = "inline_snapshot_numpy"
+numpy = "inline_snapshot_numpy._plugin"
 
 [project.urls]
 Documentation = "https://github.com/15r10nk/inline-snapshot-numpy#readme"

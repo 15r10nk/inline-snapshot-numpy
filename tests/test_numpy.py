@@ -10,16 +10,15 @@ from inline_snapshot.testing import Example
 from rich.syntax import Syntax
 
 from inline_snapshot_numpy import (
-    Array,
-    NumpyFormat,
-    _make_assert_equal,
     assert_allclose,
     assert_array_almost_equal,
     assert_array_almost_equal_nulp,
     assert_array_equal,
     assert_array_max_ulp,
 )
-from inline_snapshot_numpy import snapshot as numpy_snapshot
+from inline_snapshot_numpy._array import Array
+from inline_snapshot_numpy._assertions import _make_assert_equal
+from inline_snapshot_numpy._format import NumpyFormat
 
 requires_snapshot_updates = pytest.mark.skipif(
     platform.python_implementation() == "PyPy" and "PYTEST_XDIST_WORKER" in os.environ,
@@ -30,10 +29,10 @@ requires_snapshot_updates = pytest.mark.skipif(
 def test_assert_array_equal():
     actual = numpy.array([[1, 2], [3, 4]])
 
-    assert_array_equal(actual, numpy_snapshot(numpy.array([[1, 2], [3, 4]])))
+    assert_array_equal(actual, snapshot(numpy.array([[1, 2], [3, 4]])))
     assert_array_equal(actual, actual)
 
-    value = numpy_snapshot(numpy.array([[1, 2], [3, 4]]))
+    value = snapshot(numpy.array([[1, 2], [3, 4]]))
     assert_array_equal(actual, value)
     assert_array_equal(actual, value)
 
