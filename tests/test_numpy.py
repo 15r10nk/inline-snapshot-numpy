@@ -5,6 +5,7 @@ from inline_snapshot._global_state import state
 from inline_snapshot.testing import Example
 
 from inline_snapshot_numpy import (
+    _make_assert_equal,
     assert_allclose,
     assert_array_almost_equal,
     assert_array_almost_equal_nulp,
@@ -43,13 +44,15 @@ def test_failure_preserves_numpy_message():
 
 
 def test_failure_preserves_non_assertion_error():
+    def raises_value_error(left, right):
+        raise ValueError("comparison failed")
+
+    assert_equal = _make_assert_equal(raises_value_error)
     active = state().active
     state().active = False
     try:
-        with pytest.raises(TypeError):
-            assert_array_equal(
-                numpy.array([(1,)], dtype=[("value", "i1")]), "not an array"
-            )
+        with pytest.raises(ValueError, match="comparison failed"):
+            assert_equal(numpy.array([1]), numpy.array([1]))
     finally:
         state().active = active
 
