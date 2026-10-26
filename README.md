@@ -54,6 +54,23 @@ from inline_snapshot_numpy import setup
 setup()
 ```
 
+Arrays can also be stored in external `.npy` snapshot files:
+
+```python
+from inline_snapshot import external
+from inline_snapshot_numpy import assert_array_equal
+from numpy import array
+
+
+def test_array():
+    assert_array_equal(array([1, 2, 3]), external())
+```
+
+Create the external snapshot with `pytest --inline-snapshot=create`. NumPy object
+arrays are intentionally rejected because loading them would require enabling
+pickle. Snapshot reports render the array shape, dtype, and values as text, and
+array changes are shown as a unified text diff instead of a binary hexdump.
+
 ## License
 
 Distributed under the terms of the MIT license.

@@ -1,11 +1,15 @@
+from difflib import unified_diff
 from functools import wraps
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import numpy
 import numpy.testing
-from inline_snapshot import snapshot, snapshot_arg
+from inline_snapshot import Format, register_format, snapshot, snapshot_arg
 from inline_snapshot._snapshot.generic_value import GenericValue
+from inline_snapshot._types import SnapshotRefBase
 from inline_snapshot.plugin import ImportFrom, customize
+from rich.syntax import Syntax
 
 __version__ = "0.1.0"
 
@@ -15,6 +19,7 @@ __all__ = (
     "assert_array_almost_equal_nulp",
     "assert_array_equal",
     "assert_array_max_ulp",
+    "NumpyFormat",
     "setup",
     "snapshot",
 )
@@ -29,11 +34,47 @@ class Array:
         self.compare = compare
 
     def __eq__(self, other):
-        if isinstance(other, GenericValue):
+        if isinstance(other, (GenericValue, SnapshotRefBase)):
             return NotImplemented
         if isinstance(other, Array):
             other = other.value
         return self.compare(self.value, other)
+
+
+def _array_text(value: numpy.ndarray) -> str:
+    values = numpy.array2string(value, separator=", ")
+    return f"shape: {value.shape}\ndtype: {value.dtype.str}\nvalues:\n{values}"
+
+
+@register_format
+class NumpyFormat(Format[numpy.ndarray]):
+    """Store NumPy arrays as non-pickled ``.npy`` files."""
+
+    suffix = ".npy"
+
+    def is_format_for(self, value: object) -> bool:
+        return isinstance(value, (Array, numpy.ndarray))
+
+    def encode(self, value: Union[numpy.ndarray, Array], path: Path) -> None:
+        if isinstance(value, Array):
+            value = numpy.asarray(value.value)
+        numpy.save(path, value, allow_pickle=False)
+
+    def decode(self, path: Path) -> numpy.ndarray:
+        return numpy.load(path, allow_pickle=False)
+
+    def rich_show(self, path: Path) -> str:
+        return _array_text(self.decode(path))
+
+    def rich_diff(self, original: Path, new: Path) -> Syntax:
+        text = "\n".join(
+            unified_diff(
+                _array_text(self.decode(original)).splitlines(),
+                _array_text(self.decode(new)).splitlines(),
+                lineterm="",
+            )
+        )
+        return Syntax(text, "diff", theme="ansi_light", word_wrap=True)
 
 
 @customize
@@ -75,13 +116,13 @@ def _make_assert_equal(assert_equal):
                 return False
             return True
 
-        if not isinstance(desired, GenericValue):
+        if not isinstance(desired, (GenericValue, SnapshotRefBase)):
             desired = Array(desired, compare)
-        desired = snapshot_arg(desired)
+            desired = snapshot_arg(desired)
 
         if not (Array(actual, compare) == desired):
-            assert error is not None
-            raise error
+            if error is not None:
+                raise error
 
     return result
 
