@@ -35,6 +35,7 @@ dependencies = [
   "inline-snapshot>=0.36.1",
   "numpy>=1.20; python_version < '3.15'",
   "numpy>=2.5.4; python_version >= '3.15'",
+  "rich",
 ]
 description = "NumPy integration for inline-snapshot"
 license = "MIT"
@@ -44,7 +45,7 @@ requires-python = ">=3.9"
 version = "0.1.0"
 
 [project.entry-points.inline_snapshot]
-numpy = "inline_snapshot_numpy"
+numpy = "inline_snapshot_numpy._plugin"
 
 [project.urls]
 Documentation = "https://github.com/15r10nk/inline-snapshot-numpy#readme"
