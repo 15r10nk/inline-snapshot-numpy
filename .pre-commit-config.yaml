@@ -6,10 +6,10 @@ ci:
 
 repos:
 
-- repo: https://github.com/15r10nk/project-template
-  rev: v0.4.3
-  hooks:
-  - id: copier-enforce
+# - repo: https://github.com/15r10nk/project-template
+#   rev: v0.4.3
+#   hooks:
+#   - id: copier-enforce
 
 
 - hooks:
