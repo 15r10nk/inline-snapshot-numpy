@@ -1,3 +1,5 @@
+from inline_snapshot import snapshot
+
 from ._assertions import (
     assert_allclose,
     assert_array_almost_equal,
@@ -16,4 +18,5 @@ __all__ = (
     "assert_array_equal",
     "assert_array_max_ulp",
     "setup",
+    "snapshot",
 )
