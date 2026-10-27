@@ -15,7 +15,7 @@ def _array_text(value: numpy.ndarray) -> str:
 
 
 def _value_text(value: numpy.generic) -> str:
-    return numpy.array2string(numpy.asarray(value), separator=", ", threshold=numpy.inf)
+    return numpy.array2string(numpy.asarray(value), separator=", ")
 
 
 def _index_text(index: int, shape: tuple[int, ...]) -> str:

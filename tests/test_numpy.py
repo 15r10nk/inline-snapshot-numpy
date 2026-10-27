@@ -70,11 +70,12 @@ def test_failure_preserves_non_assertion_error():
         state().active = active
 
 
+@requires_snapshot_updates
 def test_numpy_external_format():
-    array_file = BytesIO()
-    numpy.save(
-        array_file, numpy.array([[1, 2], [3, 4]], dtype="float32"), allow_pickle=False
-    )
+    def array_file(value):
+        file = BytesIO()
+        numpy.save(file, value, allow_pickle=False)
+        return file.getvalue()
 
     Example(
         {
@@ -85,7 +86,10 @@ tests/test_something.py
             "tests/test_something.py": """\
 from inline_snapshot import external
 from inline_snapshot_numpy import assert_array_equal
+from inline_snapshot_numpy._format import NumpyFormat
 from numpy import array
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 def test_array():
@@ -93,8 +97,45 @@ def test_array():
         array([[1, 2], [30, 4]], dtype="float32"),
         external("uuid:e3e70682-c209-4cac-a29f-6fbed82c07cd.npy"),
     )
+
+
+def test_insert():
+    assert_array_equal(
+        array([0, 1, 2, 3]),
+        external("uuid:e3e70682-c209-4cac-a29f-6fbed82c07ce.npy"),
+    )
+
+
+def test_delete():
+    assert_array_equal(
+        array([1, 3]),
+        external("uuid:e3e70682-c209-4cac-a29f-6fbed82c07cf.npy"),
+    )
+
+
+def test_dtype():
+    assert_array_equal(
+        array([1, 2], dtype="int64"),
+        external("uuid:e3e70682-c209-4cac-a29f-6fbed82c07d0.npy"),
+    )
+
+
+def test_ndarray_encode():
+    with TemporaryDirectory() as directory:
+        NumpyFormat().encode(array([1]), Path(directory) / "array.npy")
 """,
-            "tests/__inline_snapshot__/test_something/test_array/e3e70682-c209-4cac-a29f-6fbed82c07cd.npy": array_file.getvalue(),
+            "tests/__inline_snapshot__/test_something/test_array/e3e70682-c209-4cac-a29f-6fbed82c07cd.npy": array_file(
+                numpy.array([[1, 2], [3, 4]], dtype="float32")
+            ),
+            "tests/__inline_snapshot__/test_something/test_insert/e3e70682-c209-4cac-a29f-6fbed82c07ce.npy": array_file(
+                numpy.array([1, 3])
+            ),
+            "tests/__inline_snapshot__/test_something/test_delete/e3e70682-c209-4cac-a29f-6fbed82c07cf.npy": array_file(
+                numpy.array([0, 1, 2, 3])
+            ),
+            "tests/__inline_snapshot__/test_something/test_dtype/e3e70682-c209-4cac-a29f-6fbed82c07d0.npy": array_file(
+                numpy.array([1], dtype="int32")
+            ),
         }
     ).run_inline(
         ["--inline-snapshot=report"],
@@ -103,11 +144,39 @@ def test_array():
 FAIL: some snapshots in this test have incorrect values.
 If you just created this value with --inline-snapshot=create, the value is now \n\
 created and you can ignore this message.
+FAIL: some snapshots in this test have incorrect values.
+If you just created this value with --inline-snapshot=create, the value is now \n\
+created and you can ignore this message.
+FAIL: some snapshots in this test have incorrect values.
+If you just created this value with --inline-snapshot=create, the value is now \n\
+created and you can ignore this message.
+FAIL: some snapshots in this test have incorrect values.
+If you just created this value with --inline-snapshot=create, the value is now \n\
+created and you can ignore this message.
 
 
 ═══════════════════════════════ inline-snapshot ════════════════════════════════
 +--------------- uuid:e3e70682-c209-4cac-a29f-6fbed82c07cd.npy ----------------+
 | ~ (1, 0): 3. -> 30.                                                          |
++------------------------------------------------------------------------------+
++--------------- uuid:e3e70682-c209-4cac-a29f-6fbed82c07ce.npy ----------------+
+| - shape: (2,)                                                                |
+| + shape: (4,)                                                                |
+| + (0,): 0                                                                    |
+| + (2,): 2                                                                    |
++------------------------------------------------------------------------------+
++--------------- uuid:e3e70682-c209-4cac-a29f-6fbed82c07cf.npy ----------------+
+| - shape: (4,)                                                                |
+| + shape: (2,)                                                                |
+| - (0,): 0                                                                    |
+| - (2,): 2                                                                    |
++------------------------------------------------------------------------------+
++--------------- uuid:e3e70682-c209-4cac-a29f-6fbed82c07d0.npy ----------------+
+| - shape: (1,)                                                                |
+| + shape: (2,)                                                                |
+| - dtype: <i4                                                                 |
+| + dtype: <i8                                                                 |
+| + (1,): 2                                                                    |
 +------------------------------------------------------------------------------+
 These changes are not applied.
 Use --inline-snapshot=fix to apply them, or use the interactive mode with \n\
