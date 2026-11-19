@@ -14,6 +14,9 @@ dev = [
   "scriv==1.8.0; python_version >= '3.10'",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/inline_snapshot_numpy"]
+
 [project]
 authors = [
   {name = "Frank Hoffmann", email = "15r10nk@polarbit.de"},
