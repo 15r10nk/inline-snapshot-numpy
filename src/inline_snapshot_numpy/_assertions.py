@@ -3,9 +3,7 @@ from typing import Optional
 
 import numpy
 import numpy.testing
-from inline_snapshot import snapshot_arg
-from inline_snapshot._snapshot.generic_value import GenericValue
-from inline_snapshot._types import SnapshotRefBase
+from inline_snapshot import is_snapshot, snapshot_arg
 
 from ._array import Array
 
@@ -24,7 +22,7 @@ def _make_assert_equal(assert_equal):
                 return False
             return True
 
-        if not isinstance(desired, (GenericValue, SnapshotRefBase)):
+        if not is_snapshot(desired):
             desired = Array(desired, compare)
             desired = snapshot_arg(desired)
 

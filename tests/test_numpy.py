@@ -5,7 +5,6 @@ from io import BytesIO
 import numpy
 import pytest
 from inline_snapshot import snapshot as inline_snapshot
-from inline_snapshot._global_state import state
 from inline_snapshot.testing import Example
 
 from inline_snapshot_numpy import (
@@ -16,7 +15,6 @@ from inline_snapshot_numpy import (
     assert_array_max_ulp,
     snapshot,
 )
-from inline_snapshot_numpy._assertions import _make_assert_equal
 
 requires_snapshot_updates = pytest.mark.skipif(
     platform.python_implementation() == "PyPy" and "PYTEST_XDIST_WORKER" in os.environ,
@@ -47,27 +45,37 @@ def test_assertion_helpers():
 
 
 def test_failure_preserves_numpy_message():
-    active = state().active
-    state().active = False
-    try:
-        with pytest.raises(AssertionError, match="Arrays are not equal"):
-            assert_array_equal(numpy.array([1, 2]), numpy.array([1, 3]))
-    finally:
-        state().active = active
+    Example(
+        """\
+import numpy
+import pytest
+from inline_snapshot_numpy import assert_array_equal
+
+
+def test_failure():
+    with pytest.raises(AssertionError, match="Arrays are not equal"):
+        assert_array_equal(numpy.array([1, 2]), numpy.array([1, 3]))
+"""
+    ).run_inline(["--inline-snapshot=disable"], reported_categories=set())
 
 
 def test_failure_preserves_non_assertion_error():
+    Example(
+        """\
+import numpy
+import pytest
+from inline_snapshot_numpy._assertions import _make_assert_equal
+
+
+def test_failure():
     def raises_value_error(left, right):
         raise ValueError("comparison failed")
 
     assert_equal = _make_assert_equal(raises_value_error)
-    active = state().active
-    state().active = False
-    try:
-        with pytest.raises(ValueError, match="comparison failed"):
-            assert_equal(numpy.array([1]), numpy.array([1]))
-    finally:
-        state().active = active
+    with pytest.raises(ValueError, match="comparison failed"):
+        assert_equal(numpy.array([1]), numpy.array([1]))
+"""
+    ).run_inline(["--inline-snapshot=disable"], reported_categories=set())
 
 
 @requires_snapshot_updates
