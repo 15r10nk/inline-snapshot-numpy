@@ -7,6 +7,30 @@ on:
 
 jobs:
 
+  lint:
+
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Run hooks with prek
+      uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
+      with:
+        prek-version: 0.5.10
+
+    - name: Check PR changelog
+      if: github.event_name == 'pull_request'
+      env:
+        BASE_REF: ${{github.event.pull_request.base.sha}}
+        HEAD_REF: ${{github.event.pull_request.head.sha}}
+      run: prek run check-changelog --stage manual --from-ref "$BASE_REF" --to-ref "$HEAD_REF"
+
+
   detect_release:
 
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -190,7 +214,7 @@ jobs:
 
   publish:
     name: Publish new release
-    needs: [detect_release, test, mypy, coverage]
+    needs: [detect_release, lint, test, mypy, coverage]
     if: needs.detect_release.outputs.is_release == 'true' && !contains(github.repository, '-insiders/')
     runs-on: ubuntu-latest
     environment: pypi
@@ -213,6 +237,15 @@ jobs:
         fetch-depth: 0
         token: ${{steps.app-token.outputs.token}}
 
+    - name: Check release tag does not exist
+      env:
+        TAG: ${{needs.detect_release.outputs.tag}}
+      run: |
+        if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+          echo "::error::Release tag $TAG already exists"
+          exit 1
+        fi
+
     - uses: ./.github/actions/setup
       with:
         python-version: '3.12'
@@ -220,23 +253,17 @@ jobs:
     - name: Build distributions
       run: uvx hatch build
 
-    - name: Tag tested commit
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+    - name: Tag and push tested commit
       env:
         TAG: ${{needs.detect_release.outputs.tag}}
       run: |
         git config user.name github-actions[bot]
         git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-        if git rev-parse "$TAG" >/dev/null 2>&1; then
-          test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"
-        else
-          git tag --annotate "$TAG" --message "Release $TAG"
-          git push origin "$TAG"
-        fi
-
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
-      with:
-        skip-existing: true
+        git tag --annotate "$TAG" --message "Release $TAG"
+        git push origin "$TAG"
 
     - name: Create GitHub release
       env:
