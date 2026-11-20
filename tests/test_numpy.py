@@ -46,8 +46,7 @@ def test_assertion_helpers():
 
 
 def test_failure_preserves_numpy_message():
-    Example(
-        """\
+    Example("""\
 import numpy
 import pytest
 from inline_snapshot_numpy import assert_array_equal
@@ -56,13 +55,11 @@ from inline_snapshot_numpy import assert_array_equal
 def test_failure():
     with pytest.raises(AssertionError, match="Arrays are not equal"):
         assert_array_equal(numpy.array([1, 2]), numpy.array([1, 3]))
-"""
-    ).run_inline(["--inline-snapshot=disable"], reported_categories=set())
+""").run_inline(["--inline-snapshot=disable"], reported_categories=set())
 
 
 def test_failure_preserves_non_assertion_error():
-    Example(
-        """\
+    Example("""\
 import numpy
 import pytest
 from inline_snapshot_numpy import assert_array_max_ulp
@@ -71,14 +68,12 @@ from inline_snapshot_numpy import assert_array_max_ulp
 def test_failure():
     with pytest.raises(TypeError, match="non-numeric array"):
         assert_array_max_ulp(numpy.array(["a"]), numpy.array(["b"]))
-"""
-    ).run_inline(["--inline-snapshot=disable"], reported_categories=set())
+""").run_inline(["--inline-snapshot=disable"], reported_categories=set())
 
 
 @requires_snapshot_updates
 def test_numpy_external_format():
-    Example(
-        """\
+    Example("""\
 from inline_snapshot import external
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
@@ -104,8 +99,7 @@ def test_delete():
 
 def test_dtype():
     assert_array_equal(array(dtype_values, dtype=dtype), external())
-"""
-    ).run_inline(
+""").run_inline(
         ["--inline-snapshot=create"], changed_files=Is(ANY)
     ).run_inline().replace(
         "value = 3", "value = 30"
@@ -119,8 +113,7 @@ def test_dtype():
         'dtype = "int32"', 'dtype = "int64"'
     ).run_inline(
         ["--inline-snapshot=report"],
-        report=snapshot(
-            """\
+        report=snapshot("""\
 FAIL: some snapshots in this test have incorrect values.
 If you just created this value with --inline-snapshot=create, the value is now \n\
 created and you can ignore this message.
@@ -162,24 +155,21 @@ These changes are not applied.
 Use --inline-snapshot=fix to apply them, or use the interactive mode with \n\
 --inline-snapshot=review
 
-"""
-        ),
+"""),
         reported_categories={"fix"},
     )
 
 
 @requires_snapshot_updates
 def test_external_ndarray_snapshot():
-    example = Example(
-        """\
+    example = Example("""\
 from inline_snapshot import external
 from numpy import array
 
 
 def test_array():
     assert external() == array([1])
-"""
-    ).run_inline(
+""").run_inline(
         ["--inline-snapshot=create"],
         changed_files={
             ".inline-snapshot/files_using_external.txt": """\
@@ -207,8 +197,7 @@ def test_array():
 
 @requires_snapshot_updates
 def test_external_snapshot():
-    example = Example(
-        """\
+    example = Example("""\
 from inline_snapshot import external
 from inline_snapshot_numpy import assert_array_almost_equal
 from numpy import array
@@ -218,8 +207,7 @@ value = 3.01
 
 def test_array():
     assert_array_almost_equal(array([1, 2, value]), external())
-"""
-    ).run_inline(["--inline-snapshot=create"], changed_files=Is(ANY))
+""").run_inline(["--inline-snapshot=create"], changed_files=Is(ANY))
     assert ".npy" in example.read_text("tests/test_something.py")
     example.run_inline().replace(
         "value = 3.01", "value = 3.01000001"
@@ -228,8 +216,7 @@ def test_array():
 
 @requires_snapshot_updates
 def test_create_and_fix_snapshot():
-    example = Example(
-        """\
+    example = Example("""\
 from inline_snapshot import snapshot
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
@@ -239,13 +226,10 @@ value = 2
 
 def test_array():
     assert_array_equal(array([1, value]), snapshot())
-"""
-    )
+""")
     example = example.run_inline(
         ["--inline-snapshot=create"],
-        changed_files=snapshot(
-            {
-                "tests/test_something.py": """\
+        changed_files=snapshot({"tests/test_something.py": """\
 from inline_snapshot import snapshot
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
@@ -255,9 +239,7 @@ value = 2
 
 def test_array():
     assert_array_equal(array([1, value]), snapshot(array([1, 2])))
-"""
-            }
-        ),
+"""}),
     )
     example.run_inline().replace("value = 2", "value = 3").run_inline(
         ["--inline-snapshot=fix"], changed_files=Is(ANY)
@@ -266,36 +248,29 @@ def test_array():
 
 @requires_snapshot_updates
 def test_create_implicit_snapshot_argument():
-    Example(
-        """\
+    Example("""\
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
 
 
 def test_array():
     assert_array_equal(array([1, 2]))
-"""
-    ).run_inline(
+""").run_inline(
         ["--inline-snapshot=create"],
-        changed_files=snapshot(
-            {
-                "tests/test_something.py": """\
+        changed_files=snapshot({"tests/test_something.py": """\
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
 
 
 def test_array():
     assert_array_equal(array([1, 2]), desired=array([1, 2]))
-"""
-            }
-        ),
+"""}),
     ).run_inline()
 
 
 @requires_snapshot_updates
 def test_dtype_is_preserved():
-    example = Example(
-        """\
+    example = Example("""\
 from inline_snapshot import snapshot
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
@@ -303,13 +278,10 @@ from numpy import array
 
 def test_array():
     assert_array_equal(array([1, 2], dtype="float32"), snapshot())
-"""
-    )
+""")
     example.run_inline(
         ["--inline-snapshot=create"],
-        changed_files=snapshot(
-            {
-                "tests/test_something.py": """\
+        changed_files=snapshot({"tests/test_something.py": """\
 from inline_snapshot import snapshot
 from inline_snapshot_numpy import assert_array_equal
 from numpy import array
@@ -319,9 +291,7 @@ def test_array():
     assert_array_equal(
         array([1, 2], dtype="float32"), snapshot(array([1.0, 2.0], dtype="<f4"))
     )
-"""
-            }
-        ),
+"""}),
     ).run_inline().run_inline(["--inline-snapshot=disable"], reported_categories=set())
 
 

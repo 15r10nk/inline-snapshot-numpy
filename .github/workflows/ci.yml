@@ -19,7 +19,7 @@ jobs:
         fetch-depth: 0
 
     - name: Run hooks with prek
-      uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
+      uses: j178/prek-action@7b101f8338a08d2bd6fdb3625e4e7692428763a3 # v3.1.1
       with:
         prek-version: 0.5.10
 
@@ -225,7 +225,7 @@ jobs:
     steps:
     - name: Create GitHub App token
       id: app-token
-      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
       with:
         client-id: ${{vars.RELEASE_APP_CLIENT_ID}}
         private-key: ${{secrets.RELEASE_APP_PRIVATE_KEY}}
