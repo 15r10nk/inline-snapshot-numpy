@@ -1,6 +1,5 @@
 import numpy
-from inline_snapshot._snapshot.generic_value import GenericValue
-from inline_snapshot._types import SnapshotRefBase
+from inline_snapshot import is_snapshot
 from inline_snapshot.plugin import ImportFrom, customize
 
 
@@ -13,7 +12,7 @@ class Array:
         self.compare = compare
 
     def __eq__(self, other):
-        if isinstance(other, (GenericValue, SnapshotRefBase)):
+        if is_snapshot(other):
             return NotImplemented
         if isinstance(other, Array):
             other = other.value
